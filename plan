@@ -1,0 +1,123 @@
+Docker Network
+│
+├── main-backend (port 8080)
+│     ├─ Handles users, auth (JWT), DB (Postgres), Redis, mail worker
+│
+├── chat-service (Spring Boot WebSocket microservice, port 8081)
+│     ├─ Handles real-time connections & message delivery
+│     ├─ Validates JWT from main-backend
+│     ├─ Future: can persist messages, or send events via Redis
+│
+└── frontend (optional later)
+      ├─ Connects via WebSocket to chat-service
+      ├─ Auth header contains JWT from main-backend login
+
+✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️
+
+String chatId = getChatId(sender, receiver); // "user1_user2"
+for (WebSocketSession s : chatRooms.get(chatId)) {
+    if (s.isOpen()) {
+        s.sendMessage(new TextMessage(payload));
+    }
+}
+✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️✈️
+
+
+
+
+
+
+      🧩 Project Summary — Spring Boot Chat Microservice (P2P, JWT-based)
+Architecture Overview
+
+You’ll run a separate Spring Boot WebSocket microservice (chat-service) alongside your main backend (already running in Docker with Postgres, Redis, etc.).
+
+The chat-service handles real-time messaging only.
+
+The main backend continues to handle JWT authentication, user data, and (later) message persistence.
+
+Docker Network:
+├── main-backend (8080): JWT auth, Postgres, Redis
+├── chat-service (8081): WebSocket + STOMP real-time chat
+└── frontend (optional): connects via JWT token in WebSocket URL
+
+JWT Integration
+
+The frontend connects like:
+
+ws://chat-service:8081/ws/chat?token=<JWT>
+
+
+The chat-service validates the token using the same secret/public key as the main backend.
+
+Authenticated users can then send and receive messages.
+
+WebSocket Setup
+
+Uses Spring WebSocket + STOMP.
+
+Endpoints:
+
+/ws → WebSocket handshake
+
+/app → app message destinations (client → server)
+
+/user/{id}/queue/messages → private queue (server → client)
+
+Message flow:
+
+Sender → /app/private.send
+
+Server → /user/{receiver}/queue/messages
+
+Session Handling
+
+Each open tab/device = one WebSocket session.
+
+By default, Spring delivers messages to all active sessions of that user.
+
+You can track sessions using SessionConnectEvent and SessionDisconnectEvent.
+
+You may enforce single-session login later if needed — not required now.
+
+Persistence
+
+(Deferred for now)
+
+Offline message storage and history fetching will later be handled by the main backend.
+
+Chat-service can forward undeliverable messages via REST API to store them in DB.
+
+Next Steps for Implementation
+
+Add dependencies in build.gradle:
+
+spring-boot-starter-websocket
+
+spring-boot-starter-security (for JWT parsing)
+
+jjwt or java-jwt
+
+Create:
+
+WebSocketConfig.java → STOMP setup
+
+JwtHandshakeInterceptor.java → validate JWT on connection
+
+ChatController.java → handle message routing
+
+ChatMessage.java → message model
+
+Test locally using Postman or wscat to simulate chat.
+
+✅ Core Concept Recap
+Feature	Handled By
+Real-time chat	WebSocket microservice
+Authentication	JWT (main backend)
+Offline messages / history	(Later) main backend
+Multiple devices	Supported — each = 1 session
+Message routing	/app → /user/queue via STOMP
+
+This setup gives you:
+
+🔒 Secure,
