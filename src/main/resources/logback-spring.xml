@@ -1,0 +1,18 @@
+<configuration>
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+
+    <property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- enable DEBUG for your app package -->
+    <logger name="com.example.demo" level="DEBUG"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
